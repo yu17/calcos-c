@@ -11,9 +11,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
-#include "linux/i2c-dev.h"
-#include "linux/i2c.h"
-//#include "i2c/smbus.h"
+#include <linux/i2c-dev.h>
+#include <linux/i2c.h>
+#include <i2c/smbus.h>
 
 #include "i2c.h"
 
@@ -67,7 +67,7 @@
 #define VERTICAL_AND_LEFT_HORIZONTAL_SCROLL 0x2A
 
 // Array of bitset constants
-const uint8_t bitset[] = {1,2,4,8,16,32,64,128};
+extern const uint8_t bitset[8];
 
 // Defines a display instance. Underscore indicates that the variable should usually not be modified once initialized.
 struct SSD1306_dispconf{
@@ -75,21 +75,29 @@ struct SSD1306_dispconf{
 	uint8_t _height;
 	uint8_t _pages;
 	int _bufferlen;
-	int _canvaslen;
+	int _displen;
 	uint8_t _i2c_dev_fd;
 	uint8_t _vccstate;
 	uint8_t contrast;
 	uint8_t *buffer;
 };
 
-int SSD1306_ctrl(struct SSD1306_dispconf *disp,uint8_t command);
+int SSD1306Ctrl(struct SSD1306_dispconf *disp,uint8_t command);
 
-int SSD1306_data_byte(struct SSD1306_dispconf *disp,uint8_t data);
+int SSD1306DataByte(struct SSD1306_dispconf *disp,uint8_t data);
 
-int SSD1306_buffer_flush(struct SSD1306_dispconf *disp);
+int SSD1306BufferFlush(struct SSD1306_dispconf *disp);
 
-int SSD1306_buffer_from_1darray(struct SSD1306_dispconf *disp,uint8_t *canvas);
+int SSD1306Init(struct SSD1306_dispconf *disp);
 
-void SSD1306_destroy(struct SSD1306_dispconf *disp);
+int SSD1306BufferFromArrayGreyscale(struct SSD1306_dispconf *disp,uint8_t *frame);
+
+int SSD1306BufferFromArrayBinary(struct SSD1306_dispconf *disp,uint8_t *frame);
+
+int SSD1306SetContrast(struct SSD1306_dispconf *disp,uint8_t contrast);
+
+struct SSD1306_dispconf* SSD1306_128_64(int busnum,uint8_t addr);
+
+void SSD1306Destroy(struct SSD1306_dispconf *disp);
 
 #endif
