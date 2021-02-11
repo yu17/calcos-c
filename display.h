@@ -10,6 +10,9 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <time.h>
+#include <pthread.h> // Compile with -lpthread
+#include <semaphore.h> // Compile with -lpthread
 
 #include "SSD1306.h"
 #include "gfxfunc.h"
@@ -20,17 +23,29 @@ struct screen{
 	int _displen,_framelen;
 	uint8_t *frame;
 	struct gfxlayer *layerlist;
+	pthread_t autorefresh_tid;
+	pthread_attr_t thattr;
+	int autorefresh_runflag;
+	int need_refresh;
 };
 
 struct screen* ScrInit();
 
 void ScrDestroy(struct screen *scr);
 
+void ScrOn(struct screen *scr);
+
+void ScrOff(struct screen *scr);
+
+void ScrSetContrast(struct screen *scr,uint8_t contrast);
+
+void ScrSetInversion(struct screen *scr,int invert);
+
 void ScrAddLayer(struct screen *scr,struct gfxlayer *layer);
 
 int ScrRmLayer(struct screen *scr,struct gfxlayer *layer);
 
-void ScrClearLayer(struct screen *scr);
+void ScrRmallLayer(struct screen *scr);
 
 void ScrRenderBinaryLayerBlend(struct screen *scr,struct gfxlayer *layer);
 
@@ -43,5 +58,11 @@ void ScrRenderBinaryLayerErase(struct screen *scr,struct gfxlayer *layer);
 void ScrRenderBinary(struct screen *scr);
 
 void ScrRefresh(struct screen *scr);
+
+void* _autorefreshproc(void *arg);
+
+void AutoRefreshStart(struct screen *scr);
+
+void AutoRefreshStop(struct screen *scr);
 
 #endif

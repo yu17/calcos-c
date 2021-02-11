@@ -41,8 +41,7 @@ struct gfxobj{
 	int visible;
 	int _canvaslen;
 	uint8_t *canvas;
-	struct gfxobj *next;
-	struct gfxobj *prev;
+	struct gfxobj *next,*prev;
 };
 
 struct gfxlayer{
@@ -51,8 +50,8 @@ struct gfxlayer{
 	int _canvaslen;
 	uint8_t *canvas;
 	struct gfxobj *objlist;
-	struct gfxlayer *next;
-	struct gfxlayer *prev;
+	struct gfxlayer *next,*prev;
+	int *need_refresh;//Obtained from screen when added to it.
 };
 
 int FontGetFaceCount(const char* fontpath);
@@ -89,9 +88,19 @@ void LayerDestroy(struct gfxlayer *layer);
 
 void LayerAddObj(struct gfxlayer *layer,struct gfxobj *obj);
 
+// Use with caution. Make sure all the objects in the layer are kept track of somewhere else, or there would be memmory leakage.
 int LayerRmObj(struct gfxlayer *layer,struct gfxobj *obj);
 
-void LayerClearObj(struct gfxlayer *layer);
+// Use with caution. Make sure all the objects in the layer are kept track of somewhere else, or there would be memmory leakage.
+void LayerRmallObj(struct gfxlayer *layer);
+
+int LayerClearObj(struct gfxlayer *layer,struct gfxobj *obj);
+
+void LayerClearallObj(struct gfxlayer *layer);
+
+void LayerClearCanvas(struct gfxlayer *layer);
+
+void LayerDirectRenderBinaryObj(struct gfxlayer *layer,struct gfxobj *obj);
 
 void LayerRenderBinaryObjBlend(struct gfxlayer *layer,struct gfxobj *obj);
 
@@ -102,5 +111,7 @@ void LayerRenderBinaryObjOveride(struct gfxlayer *layer,struct gfxobj *obj);
 void LayerRenderBinaryObjErase(struct gfxlayer *layer,struct gfxobj *obj);
 
 void LayerRenderBinary(struct gfxlayer *layer);
+
+void LayerRefresh(struct gfxlayer *layer);
 
 #endif

@@ -1,10 +1,12 @@
 #include "gfxfunc.h"
+
+#define BYTE_TO_BINARY_THRESHOLD 100
 //Functions of text/font operations.
 static FT_Library library;
 static int ftlib_init = 1;
 static int ftlib_errno;
 
-int FontGetFaceCount(const char* fontpath){
+int FontGetFaceCount(const char* fontpath) {
 	if (ftlib_init) {
 		ftlib_errno = FT_Init_FreeType(&library);
 		if (ftlib_errno) {
@@ -23,7 +25,7 @@ int FontGetFaceCount(const char* fontpath){
 	return face->num_faces;
 }
 
-FT_Face FontGetFace(const char* fontpath,int faceid){
+FT_Face FontGetFace(const char* fontpath,int faceid) {
 	if (ftlib_init) {
 		ftlib_errno = FT_Init_FreeType(&library);
 		if (ftlib_errno) {
@@ -41,22 +43,23 @@ FT_Face FontGetFace(const char* fontpath,int faceid){
 	return face;
 }
 
-void FontDestroyFace(FT_Face font){
+void FontDestroyFace(FT_Face font) {
 	FT_Done_Face(font);
 }
 
-void FontSetSizePt(FT_Face font,int pt){
+void FontSetSizePt(FT_Face font,int pt) {
 	ftlib_errno = FT_Set_Char_Size(font,0,pt*64,150,150);
 	if (ftlib_errno) printf("Failed to set font size with error %d.\n",ftlib_errno);
 }
 
-void FontSetSizePx(FT_Face font,int px){
+void FontSetSizePx(FT_Face font,int px) {
 	ftlib_errno = FT_Set_Pixel_Sizes(font,0,px);
 	if (ftlib_errno) printf("Failed to set font size with error %d.\n",ftlib_errno);
 }
 
-void FontGetStringDimension(FT_Face font,const char *str,int gap,int *width,int *height,int *bl_top,int *bl_bot){
+void FontGetStringDimension(FT_Face font,const char *str,int gap,int *width,int *height,int *bl_top,int *bl_bot) {
 	*width = 0;
+	*height = 0;
 	*bl_top = 0;
 	*bl_bot = 0;
 	for (int i=0;i<strlen(str);i++) {
@@ -65,19 +68,19 @@ void FontGetStringDimension(FT_Face font,const char *str,int gap,int *width,int 
 			printf("Failed to load the glyph for the character %c with error %d.\n",str[i],ftlib_errno);
 			return;
 		}
-		*width+=(font->glyph->bitmap.width+font->glyph->bitmap_left+gap);
+		*width+=((font->glyph->metrics.horiAdvance>>6)+gap);
+		if (font->glyph->metrics.vertAdvance>>6>*height) *height = font->glyph->metrics.vertAdvance>>6;
 		if (font->glyph->bitmap_top>*bl_top) *bl_top = font->glyph->bitmap_top;
 		if (font->glyph->bitmap.rows-font->glyph->bitmap_top>*bl_bot) *bl_bot = font->glyph->bitmap.rows-font->glyph->bitmap_top;
 	}
 	*width-=gap;
-	*height = *bl_top+*bl_bot;
 }
 
 void FontReset(){
 	FT_Done_FreeType(library);
 }
 
-struct gfxobj* ObjCreateBinaryCharPosTop(FT_Face font,const char c,int pos_x,int pos_y){
+struct gfxobj* ObjCreateBinaryCharPosTop(FT_Face font,const char c,int pos_x,int pos_y) {
 	ftlib_errno = FT_Load_Char(font,c,FT_LOAD_RENDER);
 	if (ftlib_errno) {
 		printf("Failed to load the glyph for the character %c with error %d.\n",c,ftlib_errno);
@@ -90,19 +93,20 @@ struct gfxobj* ObjCreateBinaryCharPosTop(FT_Face font,const char c,int pos_x,int
 	obj->pixelmode = PIXEL_BINARY;
 	obj->visible = 1;
 	FT_Bitmap *bitmap = &(font->glyph->bitmap);
-	obj->width = bitmap->width+font->glyph->bitmap_left;
-	obj->height = bitmap->rows;
+	obj->width = font->glyph->metrics.horiAdvance>>6;
+	obj->height = font->glyph->metrics.vertAdvance>>6;
 	obj->_canvaslen = obj->width*obj->height;
 	obj->canvas = malloc(sizeof(uint8_t)*obj->_canvaslen);
+	memset(obj->canvas,0,obj->_canvaslen);
 	for (int i=0;i<bitmap->width;i++)
 		for (int j=0;j<bitmap->rows;j++) {
-			if (bitmap->buffer[j*bitmap->pitch+i]>127) obj->canvas[(font->glyph->bitmap_left+i)*obj->height+j] = 1;
+			if (bitmap->buffer[j*bitmap->pitch+i]>BYTE_TO_BINARY_THRESHOLD) obj->canvas[(font->glyph->bitmap_left+i)*obj->height+j] = 1;
 			else obj->canvas[(font->glyph->bitmap_left+i)*obj->height+j] = 0;
 		}
 	return obj;
 }
 
-struct gfxobj* ObjCreateBinaryCharPosBaseline(FT_Face font,const char c,int pos_x,int pos_bl){
+struct gfxobj* ObjCreateBinaryCharPosBaseline(FT_Face font,const char c,int pos_x,int pos_bl) {
 	ftlib_errno = FT_Load_Char(font,c,FT_LOAD_RENDER);
 	if (ftlib_errno) {
 		printf("Failed to load the glyph for the character %c with error %d.\n",c,ftlib_errno);
@@ -115,19 +119,20 @@ struct gfxobj* ObjCreateBinaryCharPosBaseline(FT_Face font,const char c,int pos_
 	obj->pixelmode = PIXEL_BINARY;
 	obj->visible = 1;
 	FT_Bitmap *bitmap = &(font->glyph->bitmap);
-	obj->width = bitmap->width+font->glyph->bitmap_left;
-	obj->height = bitmap->rows;
+	obj->width = font->glyph->metrics.horiAdvance>>6;
+	obj->height = font->glyph->metrics.vertAdvance>>6;
 	obj->_canvaslen = obj->width*obj->height;
 	obj->canvas = malloc(sizeof(uint8_t)*obj->_canvaslen);
+	memset(obj->canvas,0,obj->_canvaslen);
 	for (int i=0;i<bitmap->width;i++)
 		for (int j=0;j<bitmap->rows;j++) {
-			if (bitmap->buffer[j*bitmap->pitch+i]>127) obj->canvas[(font->glyph->bitmap_left+i)*obj->height+j] = 1;
+			if (bitmap->buffer[j*bitmap->pitch+i]>BYTE_TO_BINARY_THRESHOLD) obj->canvas[(font->glyph->bitmap_left+i)*obj->height+j] = 1;
 			else obj->canvas[(font->glyph->bitmap_left+i)*obj->height+j] = 0;
 		}
 	return obj;
 }
 
-struct gfxobj* ObjCreateBinaryStringPosTop(FT_Face font,const char *str,int gap,int pos_x,int pos_y){
+struct gfxobj* ObjCreateBinaryStringPosTop(FT_Face font,const char *str,int gap,int pos_x,int pos_y) {
 	struct gfxobj *obj = malloc(sizeof(struct gfxobj));
 	obj->pos_x = pos_x;
 	obj->pos_y = pos_y;
@@ -150,15 +155,15 @@ struct gfxobj* ObjCreateBinaryStringPosTop(FT_Face font,const char *str,int gap,
 		bitmap = &(font->glyph->bitmap);
 		for (int i=0;i<bitmap->width;i++)
 			for (int j=0;j<bitmap->rows;j++) {
-				if (bitmap->buffer[j*bitmap->pitch+i]>127) obj->canvas[(cursor_i+font->glyph->bitmap_left+i)*obj->height+(bl_top-font->glyph->bitmap_top+j)] = 1;
+				if (bitmap->buffer[j*bitmap->pitch+i]>BYTE_TO_BINARY_THRESHOLD) obj->canvas[(cursor_i+font->glyph->bitmap_left+i)*obj->height+(bl_top-font->glyph->bitmap_top+j)] = 1;
 				else obj->canvas[(cursor_i+font->glyph->bitmap_left+i)*obj->height+(bl_top-font->glyph->bitmap_top+j)] = 0;
 			}
-		cursor_i+=(bitmap->width+font->glyph->bitmap_left+gap);
+		cursor_i+=((font->glyph->metrics.horiAdvance>>6)+gap);
 	}
 	return obj;
 }
 
-struct gfxobj* ObjCreateBinaryStringPosBaseline(FT_Face font,const char *str,int gap,int pos_x,int pos_bl){
+struct gfxobj* ObjCreateBinaryStringPosBaseline(FT_Face font,const char *str,int gap,int pos_x,int pos_bl) {
 	struct gfxobj *obj = malloc(sizeof(struct gfxobj));
 	obj->pos_x = pos_x;
 	obj->rendermode = RENDER_BLEND;
@@ -181,10 +186,10 @@ struct gfxobj* ObjCreateBinaryStringPosBaseline(FT_Face font,const char *str,int
 		bitmap = &(font->glyph->bitmap);
 		for (int i=0;i<bitmap->width;i++)
 			for (int j=0;j<bitmap->rows;j++) {
-				if (bitmap->buffer[j*bitmap->pitch+i]>127) obj->canvas[(cursor_i+font->glyph->bitmap_left+i)*obj->height+(bl_top-font->glyph->bitmap_top+j)] = 1;
+				if (bitmap->buffer[j*bitmap->pitch+i]>BYTE_TO_BINARY_THRESHOLD) obj->canvas[(cursor_i+font->glyph->bitmap_left+i)*obj->height+(bl_top-font->glyph->bitmap_top+j)] = 1;
 				else obj->canvas[(cursor_i+font->glyph->bitmap_left+i)*obj->height+(bl_top-font->glyph->bitmap_top+j)] = 0;
 			}
-		cursor_i+=(bitmap->width+font->glyph->bitmap_left+gap);
+		cursor_i+=((font->glyph->metrics.horiAdvance>>6)+gap);
 	}
 	return obj;
 }
@@ -192,7 +197,7 @@ struct gfxobj* ObjCreateBinaryStringPosBaseline(FT_Face font,const char *str,int
 // Functions of object operations.
 
 // Inclusive coordinates
-struct gfxobj* ObjCreateBinaryLine(int x1,int x2,int y1,int y2){
+struct gfxobj* ObjCreateBinaryLine(int x1,int x2,int y1,int y2) {
 	struct gfxobj *obj = malloc(sizeof(struct gfxobj));
 	obj->pos_x = MIN(x1,x2);
 	obj->pos_y = MIN(y1,y2);
@@ -220,7 +225,7 @@ struct gfxobj* ObjCreateBinaryLine(int x1,int x2,int y1,int y2){
 	return obj;
 }
 
-struct gfxobj* ObjCreateBinaryPPM(const char* filepath,int pos_x,int pos_y){
+struct gfxobj* ObjCreateBinaryPPM(const char* filepath,int pos_x,int pos_y) {
 	FILE *f=fopen(filepath,"rb");
 	if (!f) {
 		printf("Failed to open file with errno %d!\n",errno);
@@ -255,14 +260,14 @@ struct gfxobj* ObjCreateBinaryPPM(const char* filepath,int pos_x,int pos_y){
 	}
 }
 
-void ObjDestroy(struct gfxobj *obj){
+void ObjDestroy(struct gfxobj *obj) {
 	free(obj->canvas);
 	free(obj);
 }
 
 // Functions of layer operations.
 
-struct gfxlayer* LayerCreateBinary(int pos_x,int pos_y,int width,int height,int rendermode){
+struct gfxlayer* LayerCreateBinary(int pos_x,int pos_y,int width,int height,int rendermode) {
 	struct gfxlayer *layer = malloc(sizeof(struct gfxlayer));
 	layer->pos_x = pos_x;
 	layer->pos_y = pos_y;
@@ -273,19 +278,21 @@ struct gfxlayer* LayerCreateBinary(int pos_x,int pos_y,int width,int height,int 
 	layer->visible = 1;
 	layer->_canvaslen = width*height;
 	layer->canvas = malloc(sizeof(uint8_t)*layer->_canvaslen);
+	layer->objlist = NULL;
 	layer->next = NULL;
 	layer->prev = NULL;
+	layer->need_refresh = NULL;
 	return layer;
 }
 
-void LayerDestroy(struct gfxlayer *layer){
-	LayerClearObj(layer);
+void LayerDestroy(struct gfxlayer *layer) {
+	LayerClearallObj(layer);
 	free(layer->canvas);
 	free(layer);
 }
 
-void LayerAddObj(struct gfxlayer *layer,struct gfxobj *obj){
-	if (layer->objlist==NULL) {
+void LayerAddObj(struct gfxlayer *layer,struct gfxobj *obj) {
+	if (!layer->objlist) {
 		layer->objlist = obj;
 		obj->next = NULL;
 		obj->prev = NULL;
@@ -298,7 +305,32 @@ void LayerAddObj(struct gfxlayer *layer,struct gfxobj *obj){
 	}
 }
 
-int LayerRmObj(struct gfxlayer *layer,struct gfxobj *obj){
+int LayerRmObj(struct gfxlayer *layer,struct gfxobj *obj) {
+	struct gfxobj *pt = layer->objlist;
+	while (pt) {
+		if (pt==obj) {
+			if (pt->prev) pt->prev->next = pt->next;
+			else layer->objlist = pt->next;
+			if (pt->next) pt->next->prev = pt->prev;
+			return 0;
+		}
+		pt = pt->next;
+	}
+	return -1;
+}
+
+void LayerRmallObj(struct gfxlayer *layer) {
+	struct gfxobj *pt = layer->objlist;
+	struct gfxobj *t;
+	while (pt) {
+		t = pt->next;
+		pt->prev = pt->next = NULL;
+		pt = t;
+	}
+	layer->objlist = NULL;
+}
+
+int LayerClearObj(struct gfxlayer *layer,struct gfxobj *obj) {
 	struct gfxobj *pt = layer->objlist;
 	while (pt) {
 		if (pt==obj) {
@@ -313,7 +345,7 @@ int LayerRmObj(struct gfxlayer *layer,struct gfxobj *obj){
 	return -1;
 }
 
-void LayerClearObj(struct gfxlayer *layer){
+void LayerClearallObj(struct gfxlayer *layer) {
 	struct gfxobj *pt = layer->objlist;
 	struct gfxobj *t;
 	while (pt) {
@@ -324,33 +356,43 @@ void LayerClearObj(struct gfxlayer *layer){
 	layer->objlist = NULL;
 }
 
-void LayerRenderBinaryObjBlend(struct gfxlayer *layer,struct gfxobj *obj){
+void LayerClearCanvas(struct gfxlayer *layer) {
+	memset(layer->canvas,0,sizeof(uint8_t)*layer->_canvaslen);
+}
+
+void LayerDirectRenderBinaryObj(struct gfxlayer *layer,struct gfxobj *obj) {
+	if (obj->rendermode==RENDER_BLEND) LayerRenderBinaryObjBlend(layer,obj);
+	else if (obj->rendermode==RENDER_INVERT) LayerRenderBinaryObjInvert(layer,obj);
+	else if (obj->rendermode==RENDER_OVERIDE) LayerRenderBinaryObjOveride(layer,obj);
+	else if (obj->rendermode==RENDER_ERASE) LayerRenderBinaryObjErase(layer,obj);
+}
+
+void LayerRenderBinaryObjBlend(struct gfxlayer *layer,struct gfxobj *obj) {
 	for (int i=MAX(0,obj->pos_x);i<MIN(layer->width,obj->pos_x+obj->width);i++)
 		for (int j=MAX(0,obj->pos_y);j<MIN(layer->height,obj->pos_y+obj->height);j++)
 			layer->canvas[i*layer->height+j] |= obj->canvas[(i-obj->pos_x)*obj->height+j-obj->pos_y];
 }
 
-void LayerRenderBinaryObjInvert(struct gfxlayer *layer,struct gfxobj *obj){
+void LayerRenderBinaryObjInvert(struct gfxlayer *layer,struct gfxobj *obj) {
 	for (int i=MAX(0,obj->pos_x);i<MIN(layer->width,obj->pos_x+obj->width);i++)
 		for (int j=MAX(0,obj->pos_y);j<MIN(layer->height,obj->pos_y+obj->height);j++)
 			layer->canvas[i*layer->height+j] ^= obj->canvas[(i-obj->pos_x)*obj->height+j-obj->pos_y];
 }
 
-void LayerRenderBinaryObjOveride(struct gfxlayer *layer,struct gfxobj *obj){
+void LayerRenderBinaryObjOveride(struct gfxlayer *layer,struct gfxobj *obj) {
 	for  (int i=MAX(0,obj->pos_x);i<MIN(layer->width,obj->pos_x+obj->width);i++)
 		for (int j=MAX(0,obj->pos_y);j<MIN(layer->height,obj->pos_y+obj->height);j++)
 			layer->canvas[i*layer->height+j] = obj->canvas[(i-obj->pos_x)*obj->height+j-obj->pos_y];
 }
 
-void LayerRenderBinaryObjErase(struct gfxlayer *layer,struct gfxobj *obj){
+void LayerRenderBinaryObjErase(struct gfxlayer *layer,struct gfxobj *obj) {
 	for (int i=MAX(0,obj->pos_x);i<MIN(layer->width,obj->pos_x+obj->width);i++)
 		for (int j=MAX(0,obj->pos_y);j<MIN(layer->height,obj->pos_y+obj->height);j++)
 			layer->canvas[i*layer->height+j] = !obj->canvas[(i-obj->pos_x)*obj->height+j-obj->pos_y];
 }
 
-void LayerRenderBinary(struct gfxlayer *layer){
+void LayerRenderBinary(struct gfxlayer *layer) {
 	struct gfxobj *pt = layer->objlist;
-	memset(layer->canvas,0,sizeof(uint8_t)*layer->_canvaslen);
 	while (pt) {
 		if (pt->rendermode==RENDER_BLEND) LayerRenderBinaryObjBlend(layer,pt);
 		else if (pt->rendermode==RENDER_INVERT) LayerRenderBinaryObjInvert(layer,pt);
@@ -358,4 +400,8 @@ void LayerRenderBinary(struct gfxlayer *layer){
 		else if (pt->rendermode==RENDER_ERASE) LayerRenderBinaryObjErase(layer,pt);
 		pt = pt->next;
 	}
+}
+
+void LayerRefresh(struct gfxlayer *layer) {
+	*(layer->need_refresh) = 1;
 }

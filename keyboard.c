@@ -1,5 +1,17 @@
 #include "keyboard.h"
 
+const enum keyval keymap[9][8] = {
+	{KAPP,MENU,KSET,KF_1,KF_2,KF_3,KEXT,KPWR},
+	{KDEL,BSLH,AGBK,TILD,SHRP,AMPR,EQUL,BKSP},
+	{EXCL,KQ_W,KE_R,KT_Y,KU_I,KO_P,LPAR,RPAR},
+	{LSFT,KA_S,KD_F,KG_H,KJ_K,KLSL,APTP,RSFT},
+	{LCTR,K__Z,KX_C,KV_B,KN_M,COMA,SPAC,RCTR},
+	{NUM7,NUM8,NUM9,MDIV,MPCT,MFRC,MOPT,APGU},
+	{NUM4,NUM5,NUM6,MMLT,MPWR,MSQR,MSYB,APGD},
+	{NUM1,NUM2,NUM3,MMNS,AHOM,A_UP,AEND,BACK},
+	{NUM0,MDOT,MPIE,MPLS,ALFT,ADWN,ARHT,ENTR}
+};
+
 unsigned int _rowpinsnum[] = {4,17,27,22,5,6,13,19,26};
 unsigned int _colpinsnum[] = {21,20,16,12,25,24,23,18};
 const int _rowpinhigh[] = {1,1,1,1,1,1,1,1,1};
@@ -60,6 +72,9 @@ void* _kbdmonitorproc(void *arg){
 	int prob[9];
 	kprv_r = kprv_c = -1;
 	struct keyboard_event *newev;
+	struct timespec sleeptime;
+	sleeptime.tv_sec = 0;
+	sleeptime.tv_nsec = 10000;
 	while (kbd->monitor_runflag){
 		gpiod_line_set_config_bulk(kbd->rowpins,GPIOD_LINE_REQUEST_DIRECTION_INPUT,GPIOD_LINE_REQUEST_FLAG_BIAS_PULL_DOWN,NULL);
 		gpiod_line_set_config_bulk(kbd->colpins,GPIOD_LINE_REQUEST_DIRECTION_OUTPUT,0,_colpinhigh);
@@ -89,6 +104,7 @@ void* _kbdmonitorproc(void *arg){
 			kprv_r = key_r;
 			kprv_c = key_c;
 		}
+		nanosleep(&sleeptime,&sleeptime);
 	}
 	return NULL;
 }
@@ -103,8 +119,6 @@ void KbdStopMonitoring(struct keyboard *kbd){
 	if (!kbd->monitor_runflag) return;
 	kbd->monitor_runflag = 0;
 	pthread_join(kbd->monitor_tid,NULL);
-	kbd->monitor_runflag = 0;
-	return;
 }
 
 void KbdDestroy(struct keyboard *kbd){
