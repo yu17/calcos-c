@@ -78,6 +78,10 @@ struct gfxobj* ObjCreateBinaryStringPosBaseline(FT_Face font,const char *str,int
 
 struct gfxobj* ObjCreateBinaryLine(int x1,int x2,int y1,int y2);
 
+struct gfxobj* ObjCreateBinaryRect(int x1,int x2,int y1,int y2,int filled);
+
+struct gfxobj* ObjCreateBinaryCircle(int x,int y,int r,int filled);
+
 struct gfxobj* ObjCreateBinaryPPM(const char* filepath,int pos_x,int pos_y);
 
 void ObjDestroy(struct gfxobj *obj);

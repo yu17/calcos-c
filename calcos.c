@@ -74,6 +74,10 @@ int Launchapp(int appid,struct screen *scr) {
 		SysMenuInit(sysapp_menu);
 		return 0;
 	}
+	else if (appid==4) {
+		os_runflag = 0;
+		return 0;
+	}
 	else return -1;
 }
 
@@ -128,5 +132,6 @@ int main(int argc,char* argv[]){
 	ScrDestroy(scr);
 	KbdStopMonitoring(kbd);
 	KbdDestroy(kbd);
+//	system("sudo poweroff");
 	return 0;
 }

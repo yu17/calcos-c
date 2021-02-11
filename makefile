@@ -19,3 +19,7 @@ debug:
 	gcc -g -I/usr/include/freetype2 -c sys_menu.c -o sys_menu.o -Wall -lefence
 	gcc -g -I/usr/include/freetype2 -c calcos.c -o calcos.o -Wall -lefence
 	gcc -g -o calcos i2c.o SSD1306.o gfxfunc.o display.o keyboard.o sys_frame.o sys_menu.o calcos.o -li2c -lfreetype -lnetpbm -lgpiod -lpthread -Wall -lefence
+
+clean:
+	rm *.o
+	rm calcos

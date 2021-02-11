@@ -208,6 +208,7 @@ struct gfxobj* ObjCreateBinaryLine(int x1,int x2,int y1,int y2) {
 	obj->visible = 1;
 	obj->_canvaslen = obj->width*obj->height;
 	obj->canvas = malloc(sizeof(uint8_t)*obj->_canvaslen);
+	memset(obj->canvas,0,sizeof(uint8_t)*obj->_canvaslen);
 	if (x1==x2)
 		for (int j=0;j<obj->height;j++) obj->canvas[j]=1;
 	else if (y1==y2)
@@ -221,6 +222,60 @@ struct gfxobj* ObjCreateBinaryLine(int x1,int x2,int y1,int y2) {
 		float slope = ((float)obj->width-1)/((float)obj->height-1);
 		for (int j=0;j<obj->height;j++)
 			obj->canvas[(int)(j*slope)*obj->height+j]=1;
+	}
+	return obj;
+}
+
+// Inclusive cooridnates
+struct gfxobj* ObjCreateBinaryRect(int x1,int x2,int y1,int y2,int filled) {
+	struct gfxobj *obj = malloc(sizeof(struct gfxobj));
+	obj->pos_x = MIN(x1,x2);
+	obj->pos_y = MIN(y1,y2);
+	obj->width = abs(x1-x2)+1;
+	obj->height = abs(y1-y2)+2;
+	obj->rendermode = RENDER_BLEND;
+	obj->pixelmode = PIXEL_BINARY;
+	obj->visible = 1;
+	obj->_canvaslen = obj->width*obj->height;
+	obj->canvas = malloc(sizeof(uint8_t)*obj->_canvaslen);
+	if (filled) memset(obj->canvas,1,sizeof(uint8_t)*obj->_canvaslen);
+	else {
+		memset(obj->canvas,0,sizeof(uint8_t)*obj->_canvaslen);
+		for (int i=0;i<obj->width;i++) obj->canvas[i*obj->height] = obj->canvas[(i+1)*obj->height-1] = 1;
+		for (int j=0;j<obj->height;j++) obj->canvas[j] = obj->canvas[(obj->width-1)*obj->height+j] = 1;
+	}
+	return obj;
+}
+
+struct gfxobj* ObjCreateBinaryCircle(int x,int y,int r,int filled) {
+	struct gfxobj *obj = malloc(sizeof(struct gfxobj));
+	obj->pos_x = x-r+1;
+	obj->pos_y = y-r+1;
+	obj->width = 2*r-1;
+	obj->height = 2*r-1;
+	obj->rendermode = RENDER_BLEND;
+	obj->pixelmode = PIXEL_BINARY;
+	obj->visible = 1;
+	obj->_canvaslen = obj->width*obj->height;
+	obj->canvas = malloc(sizeof(uint8_t)*obj->_canvaslen);
+	memset(obj->canvas,0,sizeof(uint8_t)*obj->_canvaslen);
+	if (filled) {
+		for (int i=0;i<obj->width;i++) {
+			int yhalf = round(sqrt((r-1)*(r-1)-(r-1-i)*(r-1-i)));
+			for (int j=r-1-yhalf;j<=r-1+yhalf;j++) obj->canvas[i*obj->height+j] = 1;
+		}
+	}
+	else {
+		for (int i=0;i<obj->width;i++) {
+			int yhalf = round(sqrt((r-1)*(r-1)-(r-1-i)*(r-1-i)));
+			obj->canvas[i*obj->height+r-1-yhalf] = 1;
+			obj->canvas[i*obj->height+r-1+yhalf] = 1;
+		}
+		for (int j=0;j<obj->height;j++) {
+			int xhalf = round(sqrt((r-1)*(r-1)-(r-1-j)*(r-1-j)));
+			obj->canvas[(r-1-xhalf)*obj->height+j] = 1;
+			obj->canvas[(r-1+xhalf)*obj->height+j] = 1;
+		}
 	}
 	return obj;
 }
@@ -248,6 +303,7 @@ struct gfxobj* ObjCreateBinaryPPM(const char* filepath,int pos_x,int pos_y) {
 		obj->visible = 1;
 		obj->_canvaslen = width*height;
 		obj->canvas = malloc(sizeof(uint8_t)*obj->_canvaslen);
+		memset(obj->canvas,0,sizeof(uint8_t)*obj->_canvaslen);
 		for (int i=0;i<width;i++)
 			for (int j=0;j<height;j++)
 				obj->canvas[i*height+j] = img[j][i].r>maxval/2 || img[j][i].g>maxval/2 || img[j][i].b>maxval/2;
