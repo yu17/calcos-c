@@ -3,7 +3,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include <stdarg.h>
+#include <math.h> // Compile with -lm
 #include <string.h>
 #include <stdint.h>
 #include <fcntl.h>
@@ -84,9 +85,19 @@ struct gfxobj* ObjCreateBinaryCircle(int x,int y,int r,int filled);
 
 struct gfxobj* ObjCreateBinaryPPM(const char* filepath,int pos_x,int pos_y);
 
+void ObjFlattenBinaryObjBlend(struct gfxobj *desc,struct gfxobj *src);
+
+void ObjFlattenBinaryObjInvert(struct gfxobj *desc,struct gfxobj *src);
+
+void ObjFlattenBinaryObjOveride(struct gfxobj *desc,struct gfxobj *src);
+
+void ObjFlattenBinaryObjErase(struct gfxobj *desc,struct gfxobj *src);
+
 void ObjDestroy(struct gfxobj *obj);
 
 struct gfxlayer* LayerCreateBinary(int pos_x,int pos_y,int width,int height,int rendermode);
+
+struct gfxobj* ObjFlattenBinary(int objcount,...);
 
 void LayerDestroy(struct gfxlayer *layer);
 

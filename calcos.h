@@ -29,8 +29,8 @@ void KEHKeyUpSend(enum keyval key);
 
 void KEHKeyDownSend(enum keyval key);
 
-int Launchapp(int appid,struct screen *scr);
+int Launchapp(int appid);
 
-int Termapp(int appid,struct screen *scr);
+int Termapp(int appid);
 
 #endif

@@ -58,17 +58,17 @@ void KEHKeyDownSend(enum keyval key) {
 	}
 }
 
-int Launchapp(int appid,struct screen *scr) {
+int Launchapp(int appid) {
 	struct gfxlayer *layer;
 	if (appid==-1) {
 		layer = LayerCreateBinary(0,0,128,64,RENDER_BLEND);
-		ScrAddLayer(scr,layer);
+		ScrAddLayer(layer);
 		SysFrameInit(layer);
 		return 0;
 	}
 	else if (appid==-2) {
 		sysapp_menu->window = LayerCreateBinary(128,0,128,64,RENDER_OVERIDE);
-		ScrAddLayer(scr,sysapp_menu->window);
+		ScrAddLayer(sysapp_menu->window);
 		sysapp_menu->running = sysapp_menu->foreground = 1;
 		_runningappadd(sysapp_menu);
 		SysMenuInit(sysapp_menu);
@@ -81,15 +81,15 @@ int Launchapp(int appid,struct screen *scr) {
 	else return -1;
 }
 
-int Termapp(int appid,struct screen *scr) {
+int Termapp(int appid) {
 	if (appid==-1) {
-		ScrRmLayer(scr,SysFrameTerm());
+		ScrRmLayer(SysFrameTerm());
 		return 0;
 	}
 	else if (appid==-2) {
 		int launchappid;
 		launchappid = SysMenuTerm();
-		ScrRmLayer(scr,sysapp_menu->window);
+		ScrRmLayer(sysapp_menu->window);
 		_runningappdel(sysapp_menu);
 		memset(sysapp_menu,0,sizeof(struct apppacket));
 		return launchappid;
@@ -98,40 +98,38 @@ int Termapp(int appid,struct screen *scr) {
 }
 
 int main(int argc,char* argv[]){
-	struct screen *scr = ScrInit();
-	struct keyboard *kbd = KbdInit();
-	AutoRefreshStart(scr);
-	KbdStartMonitoring(kbd);
-	Launchapp(-1,scr);
+	ScrInit();
+	KbdInit();
+	AutoRefreshStart();
+	KbdStartMonitoring();
+	Launchapp(-1);
 	for (int i=0;i<APPCOUNT;i++) apps[i] = calloc(0,sizeof(struct apppacket));
 	sysapp_menu = malloc(sizeof(struct apppacket));
 	memset(sysapp_menu,0,sizeof(struct apppacket));
-	struct keyboard_event *kbdevent;
+	struct keyboard_event *kbdev;
 	enum keyval key;
 	while (os_runflag) {
-		kbdevent = KbdWaitEvent(kbd);
-		if (kbdevent) {
-			key = keymap[kbdevent->key_r][kbdevent->key_c];
-			if (kbdevent->event_type == KEYBOARD_EVENT_KEYUP) {
-				if (key==KAPP&&!sysapp_menu->running) Launchapp(-2,scr);
-				else if ((key==KAPP||key==BACK)&&sysapp_menu->running) Termapp(-2,scr);
-				else if (key==ENTR&&sysapp_menu->running) Launchapp(Termapp(-2,scr),scr);
-				else KEHKeyUpSend(key);
-			}
-			else if (kbdevent->event_type == KEYBOARD_EVENT_KEYDOWN) KEHKeyDownSend(key);
-			free(kbdevent);
+		kbdev = KbdWaitEvent();
+		key = keymap[kbdev->key_r][kbdev->key_c];
+		if (kbdev->event_type==KEYBOARD_EVENT_KEYUP) {
+			if (key==KAPP&&!sysapp_menu->running) Launchapp(-2);
+			else if ((key==KAPP||key==BACK)&&sysapp_menu->running) Termapp(-2);
+			else if (key==ENTR&&sysapp_menu->running) Launchapp(Termapp(-2));
+			else KEHKeyUpSend(key);
 		}
+		else if (kbdev->event_type==KEYBOARD_EVENT_KEYDOWN) KEHKeyDownSend(key);
+		KbdPostEvent();
 	}
 	for (int i=0;i<APPCOUNT;i++) {
-		if (apps[i]&&apps[i]->running) Termapp(i,scr);
+		if (apps[i]&&apps[i]->running) Termapp(i);
 		free(apps[i]);
 	}
-	Termapp(-1,scr);
-	AutoRefreshStop(scr);
-	ScrOff(scr);
-	ScrDestroy(scr);
-	KbdStopMonitoring(kbd);
-	KbdDestroy(kbd);
+	Termapp(-1);
+	AutoRefreshStop();
+	ScrOff();
+	ScrDestroy();
+	KbdStopMonitoring();
+	KbdDestroy();
 //	system("sudo poweroff");
 	return 0;
 }

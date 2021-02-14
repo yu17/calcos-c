@@ -19,6 +19,8 @@
 #define KEYBOARD_EVENT_KEYDOWN 50
 #define KEYBOARD_EVENT_KEYUP 51
 
+#define KEYBOARD_EVENT_LOOP_BUFFER_LENGTH 64
+
 enum keyval{
 	KAPP,MENU,KSET,KF_1,KF_2,KF_3,KEXT,KPWR,
 	KDEL,BSLH,AGBK,TILD,SHRP,AMPR,EQUL,BKSP,
@@ -35,34 +37,22 @@ extern const enum keyval keymap[9][8];
 
 struct keyboard_event{
 	int key_r,key_c,event_type;
-	struct keyboard_event *next;
 };
 
-struct keyboard{
-	int rows,cols;
-	struct gpiod_chip *chip;
-	struct gpiod_line_bulk *rowpins,*colpins;
-	sem_t *event_flag;
-	sem_t *event_access;
-	struct keyboard_event *event_buffer;
-	pthread_t monitor_tid;
-	pthread_attr_t thattr;
-	int monitor_runflag;
-};
-
-struct keyboard* KbdInit();
+void KbdInit();
 
 void* _kbdmonitorproc(void *arg);
 
-void KbdStartMonitoring(struct keyboard *kbd);
+void KbdStartMonitoring();
 
-void KbdStopMonitoring(struct keyboard *kbd);
+void KbdStopMonitoring();
 
-void KbdDestroy(struct keyboard *kbd);
+void KbdDestroy();
 
-void _kbdevent_append(struct keyboard *kbd,struct keyboard_event *event);
+int _kbdevent_append(int key_r,int key_c,int event_type);
 
-// Be sure to free the struct pointer after use, or memory leakage would occur.
-struct keyboard_event* KbdWaitEvent(struct keyboard *kbd);
+struct keyboard_event *KbdWaitEvent();
+
+void KbdPostEvent();
 
 #endif

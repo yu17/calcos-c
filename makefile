@@ -7,7 +7,7 @@ all:
 	gcc -I/usr/include/freetype2 -c sys_frame.c -o sys_frame.o -Wall
 	gcc -I/usr/include/freetype2 -c sys_menu.c -o sys_menu.o -Wall
 	gcc -I/usr/include/freetype2 -c calcos.c -o calcos.o -Wall
-	gcc -o calcos i2c.o SSD1306.o gfxfunc.o display.o keyboard.o sys_frame.o sys_menu.o calcos.o -li2c -lfreetype -lnetpbm -lgpiod -lpthread -Wall
+	gcc -o calcos i2c.o SSD1306.o gfxfunc.o display.o keyboard.o sys_frame.o sys_menu.o calcos.o -li2c -lm -lfreetype -lnetpbm -lgpiod -lpthread -Wall
 
 debug:
 	gcc -g -c i2c.c -o i2c.o -Wall -lefence

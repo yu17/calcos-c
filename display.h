@@ -17,52 +17,40 @@
 #include "SSD1306.h"
 #include "gfxfunc.h"
 
-struct screen{
-	int width,height;
-	struct SSD1306_dispconf * disp[3];
-	int _displen,_framelen;
-	uint8_t *frame;
-	struct gfxlayer *layerlist;
-	pthread_t autorefresh_tid;
-	pthread_attr_t thattr;
-	int autorefresh_runflag;
-	int need_refresh;
-};
+void ScrInit();
 
-struct screen* ScrInit();
+void ScrDestroy();
 
-void ScrDestroy(struct screen *scr);
+void ScrOn();
 
-void ScrOn(struct screen *scr);
+void ScrOff();
 
-void ScrOff(struct screen *scr);
+void ScrSetContrast(uint8_t contrast);
 
-void ScrSetContrast(struct screen *scr,uint8_t contrast);
+void ScrSetInversion(int invert);
 
-void ScrSetInversion(struct screen *scr,int invert);
+void ScrAddLayer(struct gfxlayer *layer);
 
-void ScrAddLayer(struct screen *scr,struct gfxlayer *layer);
+int ScrRmLayer(struct gfxlayer *layer);
 
-int ScrRmLayer(struct screen *scr,struct gfxlayer *layer);
+void ScrRmallLayer();
 
-void ScrRmallLayer(struct screen *scr);
+void ScrRenderBinaryLayerBlend(struct gfxlayer *layer);
 
-void ScrRenderBinaryLayerBlend(struct screen *scr,struct gfxlayer *layer);
+void ScrRenderBinaryLayerInvert(struct gfxlayer *layer);
 
-void ScrRenderBinaryLayerInvert(struct screen *scr,struct gfxlayer *layer);
+void ScrRenderBinaryLayerOveride(struct gfxlayer *layer);
 
-void ScrRenderBinaryLayerOveride(struct screen *scr,struct gfxlayer *layer);
+void ScrRenderBinaryLayerErase(struct gfxlayer *layer);
 
-void ScrRenderBinaryLayerErase(struct screen *scr,struct gfxlayer *layer);
+void ScrRenderBinary();
 
-void ScrRenderBinary(struct screen *scr);
-
-void ScrRefresh(struct screen *scr);
+void ScrRefresh();
 
 void* _autorefreshproc(void *arg);
 
-void AutoRefreshStart(struct screen *scr);
+void AutoRefreshStart();
 
-void AutoRefreshStop(struct screen *scr);
+void AutoRefreshStop();
 
 #endif

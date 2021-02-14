@@ -316,6 +316,62 @@ struct gfxobj* ObjCreateBinaryPPM(const char* filepath,int pos_x,int pos_y) {
 	}
 }
 
+void ObjFlattenBinaryObjBlend(struct gfxobj *desc,struct gfxobj *src) {
+	for (int i=0;i<src->width;i++)
+		for (int j=0;j<src->height;j++)
+			desc->canvas[(src->pos_x-desc->pos_x+i)*desc->height+src->pos_y-desc->pos_y+j] |= src->canvas[i*src->height+j];
+}
+
+void ObjFlattenBinaryObjInvert(struct gfxobj *desc,struct gfxobj *src) {
+	for (int i=0;i<src->width;i++)
+		for (int j=0;j<src->height;j++)
+			desc->canvas[(src->pos_x-desc->pos_x+i)*desc->height+src->pos_y-desc->pos_y+j] ^= src->canvas[i*src->height+j];
+}
+
+void ObjFlattenBinaryObjOveride(struct gfxobj *desc,struct gfxobj *src) {
+	for (int i=0;i<src->width;i++)
+		for (int j=0;j<src->height;j++)
+			desc->canvas[(src->pos_x-desc->pos_x+i)*desc->height+src->pos_y-desc->pos_y+j] = src->canvas[i*src->height+j];
+}
+
+void ObjFlattenBinaryObjErase(struct gfxobj *desc,struct gfxobj *src) {
+	for (int i=0;i<src->width;i++)
+		for (int j=0;j<src->height;j++)
+			desc->canvas[(src->pos_x-desc->pos_x+i)*desc->height+src->pos_y-desc->pos_y+j] = !src->canvas[i*src->height+j];
+}
+
+struct gfxobj* ObjFlattenBinary(int objcount,...) {
+	if (objcount==0) return NULL;
+	va_list objs;
+	va_start(objs,objcount);
+	if (objcount==1) return va_arg(objs,struct gfxobj*);
+	struct gfxobj *objlist[objcount];
+	struct gfxobj *target = malloc(sizeof(struct gfxobj));
+	target->width = target->height = INT_MIN;
+	target->pos_x = target->pos_y = INT_MAX;
+	for (int i=0;i<objcount;i++) {
+		objlist[i] = va_arg(objs,struct gfxobj*);
+		if (target->pos_x>objlist[i]->pos_x) target->pos_x = objlist[i]->pos_x;
+		if (target->pos_y>objlist[i]->pos_y) target->pos_y = objlist[i]->pos_y;
+		if (target->pos_x+target->width<objlist[i]->pos_x+objlist[i]->width) target->width = objlist[i]->pos_x+objlist[i]->width-target->pos_x;
+		if (target->pos_y+target->height<objlist[i]->pos_y+objlist[i]->height) target->height = objlist[i]->pos_y+objlist[i]->height-target->pos_y;
+	}
+	va_end(objs);
+	target->rendermode = RENDER_BLEND;
+	target->pixelmode = PIXEL_BINARY;
+	target->visible = 1;
+	target->_canvaslen = target->width*target->height;
+	target->canvas = malloc(sizeof(uint8_t)*target->_canvaslen);
+	for (int i=0;i<objcount;i++) {
+		if (objlist[i]->rendermode==RENDER_BLEND) ObjFlattenBinaryObjBlend(target,objlist[i]);
+		else if (objlist[i]->rendermode==RENDER_INVERT) ObjFlattenBinaryObjInvert(target,objlist[i]);
+		else if (objlist[i]->rendermode==RENDER_OVERIDE) ObjFlattenBinaryObjOveride(target,objlist[i]);
+		else if (objlist[i]->rendermode==RENDER_ERASE) ObjFlattenBinaryObjErase(target,objlist[i]);
+		ObjDestroy(objlist[i]);
+	}
+	return target;
+}
+
 void ObjDestroy(struct gfxobj *obj) {
 	free(obj->canvas);
 	free(obj);
