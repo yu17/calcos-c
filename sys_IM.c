@@ -1,8 +1,8 @@
 #include "sys_IM.h"
 
 static enum keyval input_key,prev_key;
-static char prev_opt;// Change between 0/2 indicating primary or secondary character.
-static char prev_shift;// Save the shift status for the pending input.
+static int prev_opt;// Change between 0/2 indicating primary or secondary character.
+static int prev_shift;// Save the shift status for the pending input.
 static sem_t pending_flag;
 static char IMmainloop_runflag = 0;
 static pthread_t IMmainloop_t;
@@ -76,7 +76,7 @@ void SysIMTerm() {
 }
 
 //Also resets IM
-static inline void IMSetCharHandler(void (*charhandler)(int,char)) {
+void IMSetCharHandler(void (*charhandler)(int,char)) {
 	if (IMmainloop_runflag) {
 		input_key = KNIL;
 		sem_post(&pending_flag);
@@ -85,7 +85,7 @@ static inline void IMSetCharHandler(void (*charhandler)(int,char)) {
 	appcharhandler = charhandler;
 }
 
-static inline void IMKeyPress(enum keyval key) {
+void IMKeyPress(enum keyval key) {
 	if (appcharhandler) {
 		input_key = key;
 		sem_post(&pending_flag);
@@ -138,4 +138,5 @@ void *_immainproc(void *arg) {
 			}
 		}
 	}
+	return NULL;
 }

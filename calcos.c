@@ -4,7 +4,7 @@
 
 static int os_runflag = 1;
 
-char shift_flag = 0;
+int shift_flag = 0;
 
 // Static configuration information used for starting the app.
 static struct appstatic app_configs[]={
@@ -71,7 +71,7 @@ int Launchapp(int appid) {
 		SysFrameInit(layer);
 		return 0;
 		case -2://SysMenu
-		if (sysapp_menu.running) break;
+		if (sysapp_menu.running) return -1;
 		sysapp_menu.window = LayerCreateBinary(128,0,128,64,RENDER_OVERIDE);
 		ScrAddLayer(sysapp_menu.window);
 		sysapp_menu.running = sysapp_menu.foreground = 1;
@@ -79,18 +79,19 @@ int Launchapp(int appid) {
 		IMSetCharHandler(sysapp_menu.charhandler);
 		_runningappadd(&sysapp_menu);
 		return 0;
-		case 1://qalc
-		case 2://graph
-		case 3://notebook
-		case 4://terminal
-		case 5://settings
-		if (apps[appid]->running) break;
+		case 0://qalc
+		case 1://graph
+		case 2://notebook
+		case 3://terminal
+		case 4://settings
+		if (apps[appid]->running) return -1;
 		apps[appid]->window = LayerCreateBinary(app_configs[appid].left,app_configs[appid].top,app_configs[appid].width,app_configs[appid].height,app_configs[appid].rendermode);
 		ScrAddLayer(apps[appid]->window);
 		apps[appid]->running = apps[appid]->foreground = 1;
 		app_configs[appid].AppInit(apps[appid]);
 		IMSetCharHandler(apps[appid]->charhandler);
 		_runningappadd(apps[appid]);
+		return 0;
 		case 6://poweroff (This entry point is no longer used. SIGPWOF is preferred.)
 		os_runflag = 0;
 		return 0;
@@ -104,7 +105,7 @@ int Termapp(int appid) {
 		ScrRmLayer(SysFrameTerm());
 		return 0;
 		case -2:
-		if (!sysapp_menu.running) break;
+		if (!sysapp_menu.running) return -1;
 		SysMenuTerm();
 		sysapp_menu.running = sysapp_menu.foreground = 0;
 		IMSetCharHandler(NULL);
@@ -112,18 +113,19 @@ int Termapp(int appid) {
 		_runningappdel(&sysapp_menu);
 		memset(&sysapp_menu,0,sizeof(struct apppacket));
 		return 0;
-		case 1://qalc
-		case 2://graph
-		case 3://notebook
-		case 4://terminal
-		case 5://settings
-		if (!apps[appid]->running) break;
+		case 0://qalc
+		case 1://graph
+		case 2://notebook
+		case 3://terminal
+		case 4://settings
+		if (!apps[appid]->running) return -1;
 		app_configs[appid].AppTerm();
 		apps[appid]->running = apps[appid]->foreground = 0;
 		IMSetCharHandler(NULL);
 		ScrRmLayer(apps[appid]->window);
 		_runningappdel(apps[appid]);
-		memtset(apps[appid],0,sizeof(struct apppacket));
+		memset(apps[appid],0,sizeof(struct apppacket));
+		return 0;
 		default:
 		return -1;
 	}
@@ -172,7 +174,10 @@ int main(int argc,char* argv[]){
 	KbdStartMonitoring();
 	SysIMInit();
 	Launchapp(-1);
-	for (int i=0;i<APPCOUNT;i++) apps[i] = calloc(0,sizeof(struct apppacket));
+	for (int i=0;i<APPCOUNT;i++) {
+		apps[i] = malloc(sizeof(struct apppacket));
+		memset(apps[i],0,sizeof(struct apppacket));
+	}
 	memset(&sysapp_menu,0,sizeof(struct apppacket));
 	struct keyboard_event *kbdev;
 	enum keyval key;

@@ -9,7 +9,7 @@
 #define SIGHANG 2
 #define SIGPWOF -1// Implies SIGTERM on all apps.
 
-extern char shift_flag;
+extern int shift_flag;
 
 struct apppacket{
 	struct gfxlayer *window;

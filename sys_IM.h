@@ -21,7 +21,7 @@
 #define IM_DETERMINED 62
 #define IM_NONHYBRID 63
 
-static inline void IMSetCharHandler(void (*charhandler)(int,char));
+void IMSetCharHandler(void (*charhandler)(int,char));
 
 // Should be called only once by the OS. Should not be called by any apps.
 void SysIMInit();
@@ -29,7 +29,7 @@ void SysIMInit();
 // Should be called only once by the OS. Should not be called by any apps.
 void SysIMTerm();
 
-static inline void IMKeyPress(enum keyval key);
+void IMKeyPress(enum keyval key);
 
 void *_immainproc(void *arg);
 
