@@ -4,6 +4,7 @@ all:
 	gcc -I/usr/include/freetype2 -c gfxfunc.c -o gfxfunc.o -Wall
 	gcc -I/usr/include/freetype2 -c display.c -o display.o -Wall
 	gcc -c keyboard.c -o keyboard.o -Wall
+	gcc -c sys_IM.c -o sys_IM.o -Wall
 	gcc -I/usr/include/freetype2 -c sys_frame.c -o sys_frame.o -Wall
 	gcc -I/usr/include/freetype2 -c sys_menu.c -o sys_menu.o -Wall
 	gcc -I/usr/include/freetype2 -c calcos.c -o calcos.o -Wall
@@ -15,6 +16,7 @@ debug:
 	gcc -g -I/usr/include/freetype2 -c gfxfunc.c -o gfxfunc.o -Wall -lefence
 	gcc -g -I/usr/include/freetype2 -c display.c -o display.o -Wall -lefence
 	gcc -g -c keyboard.c -o keyboard.o -Wall -lefence
+	gcc -g -c sys_IM.c -o sys_IM.o -lefence
 	gcc -g -I/usr/include/freetype2 -c sys_frame.c -o sys_frame.o -Wall -lefence
 	gcc -g -I/usr/include/freetype2 -c sys_menu.c -o sys_menu.o -Wall -lefence
 	gcc -g -I/usr/include/freetype2 -c calcos.c -o calcos.o -Wall -lefence

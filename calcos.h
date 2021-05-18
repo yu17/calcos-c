@@ -16,18 +16,10 @@
 #include "display.h"
 #include "keyboard.h"
 #include "calcos_api.h"
+#include "sys_IM.h"
 
 #include "sys_frame.h"
 #include "sys_menu.h"
-
-// Apps
-void _runningappadd(struct apppacket *app);
-
-int _runningappdel(struct apppacket *app);
-
-void KEHKeyUpSend(enum keyval key);
-
-void KEHKeyDownSend(enum keyval key);
 
 int Launchapp(int appid);
 

@@ -6,14 +6,15 @@ const enum keyval keymap[9][8] = {
 	{EXCL,KQ_W,KE_R,KT_Y,KU_I,KO_P,LPAR,RPAR},
 	{LSFT,KA_S,KD_F,KG_H,KJ_K,KLSL,APTP,RSFT},
 	{LCTR,K__Z,KX_C,KV_B,KN_M,COMA,SPAC,RCTR},
-	{NUM7,NUM8,NUM9,MDIV,MPCT,MFRC,MOPT,APGU},
+	{NUM7,NUM8,NUM9,MDIV,MPCT,MLOG,MOPT,APGU},
 	{NUM4,NUM5,NUM6,MMLT,MPWR,MSQR,MSYB,APGD},
 	{NUM1,NUM2,NUM3,MMNS,AHOM,A_UP,AEND,BACK},
 	{NUM0,MDOT,MPIE,MPLS,ALFT,ADWN,ARHT,ENTR}
 };
 
-const unsigned int _rowpinsnum[] = {4,17,27,22,5,6,13,19,26};
-const unsigned int _colpinsnum[] = {21,20,16,12,25,24,23,18};
+// Not using const for pinnums for now due to that the gpio lib accepts only non-const arrays. Might change in the future.
+unsigned int _rowpinsnum[] = {4,17,27,22,5,6,13,19,26};
+unsigned int _colpinsnum[] = {21,20,16,12,25,24,23,18};
 const int _rowpinhigh[] = {1,1,1,1,1,1,1,1,1};
 const int _rowpinlow[] = {0,0,0,0,0,0,0,0,0};
 const int _colpinhigh[] = {1,1,1,1,1,1,1,1};

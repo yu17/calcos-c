@@ -29,8 +29,10 @@ void ScrSetContrast(uint8_t contrast);
 
 void ScrSetInversion(int invert);
 
+// Append the layer to the screen.
 void ScrAddLayer(struct gfxlayer *layer);
 
+// Remove the layer from the screen and also destroy it.
 int ScrRmLayer(struct gfxlayer *layer);
 
 void ScrRmallLayer();

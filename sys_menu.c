@@ -1,19 +1,20 @@
 #include "sys_menu.h"
 
-#define OPTIONCOUNT 5
+#define OPTIONCOUNT 6
 
 #define ANIMATED 0
 
 static struct apppacket *appconf;
 static struct gfxlayer *window;
 static FT_Face font = NULL;
-static struct gfxobj *larrow,*rarrow,*app_icon[5];
-static char *app_names[5] = {"qalc","graph","terminal","settings","poweroff"};
+static struct gfxobj *larrow,*rarrow,*app_icon[OPTIONCOUNT];
+static char *app_names[OPTIONCOUNT] = {"qalc","graph","notebook","terminal","settings","poweroff"};
 static int selection = 0;
 static struct timespec sleeptime;
 
 void SysMenuKeyUp(enum keyval key) {
-	if (key==ALFT) {
+	switch (key) {
+		case ALFT:
 		if (selection==0) return;
 		LayerRmObj(window,rarrow);
 		LayerRmObj(window,larrow);
@@ -35,8 +36,8 @@ void SysMenuKeyUp(enum keyval key) {
 		LayerRenderBinary(window);
 		LayerRefresh(window);
 		selection--;
-	}
-	else if (key==ARHT) {
+		break;
+		case ARHT:
 		if (selection==OPTIONCOUNT-1) return;
 		LayerRmObj(window,rarrow);
 		LayerRmObj(window,larrow);
@@ -58,6 +59,18 @@ void SysMenuKeyUp(enum keyval key) {
 		LayerRenderBinary(window);
 		LayerRefresh(window);
 		selection++;
+		break;
+		case KAPP:
+		case BACK:
+		OSSIG(-2,SIGTERM,0);
+		break;
+		case ENTR:
+		OSSIG(-2,SIGTERM,0);
+		if (selection!=OPTIONCOUNT-1) OSSIG(-2,SIGSTRT,selection);
+		else OSSIG(-2,SIGPWOF,0);
+		break;
+		default:
+		break;
 	}
 }
 
@@ -65,6 +78,7 @@ void SysMenuInit(struct apppacket *app) {
 	appconf = app;
 	appconf->keyuphandler = SysMenuKeyUp;
 	appconf->keydownhandler = NULL;
+	appconf->charhandler = NULL;
 	window = appconf->window;
 	selection = 0;
 	sleeptime.tv_sec = 0;
@@ -94,5 +108,5 @@ int SysMenuTerm() {
 	ObjDestroy(rarrow);
 	FontDestroyFace(font);
 	appconf->keyuphandler = NULL;
-	return selection;
+	return 0;
 }
